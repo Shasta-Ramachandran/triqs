@@ -1,0 +1,114 @@
+# Multiple inclusion guard
+if(NOT CPP2PY_FOUND)
+set(CPP2PY_FOUND True)
+set_property(GLOBAL PROPERTY Cpp2Py_FOUND TRUE)
+
+# Version
+set(CPP2PY_VERSION 2.0.0 CACHE STRING "Cpp2Py Version")
+set(CPP2PY_GIT_HASH d990c2e8c107bcaf2f3c829b9382b426c4a02d1f CACHE STRING "Cpp2Py Git Hash")
+
+# The compiler used for cpp2py
+set(CPP2PY_CXX_COMPILER /Library/Developer/CommandLineTools/usr/bin/c++ CACHE FILEPATH "C++ compiler used by Cpp2Py")
+
+# Python Interpreter
+set(CPP2PY_PYTHON_EXECUTABLE /Users/ssr38/anaconda3/bin/python3.11 CACHE FILEPATH "Python Executable")
+set(CPP2PY_PYTHON_INTERPRETER /Users/ssr38/anaconda3/bin/python3.11 CACHE FILEPATH "Python Executable") # Backward Compat
+set(CPP2PY_PYTHON_LIB_DEST_ROOT lib/python3.11/site-packages CACHE PATH "Python module directory relative to install directory")
+set(CPP2PY_PYTHON_MODULE_EXT .cpython-311-darwin.so CACHE FILEPATH "Extension of compiled Python modules")
+set(CPP2PY_MODULE_DIR /Users/ssr38/Documents/GitHub/triqs/install/lib/python3.11/site-packages CACHE PATH "The Cpp2Py Python module directory")
+set(CPP2PY_PYTHON_NUMPY_VERSION_LT_17  CACHE BOOL "True if the Numpy version older than 1.17")
+
+# Root of the Cpp2Py installation
+set(CPP2PY_ROOT /Users/ssr38/Documents/GitHub/triqs/install CACHE PATH "Root of Cpp2Py")
+
+MESSAGE(STATUS "Found Cpp2PyConfig.cmake with version ${CPP2PY_VERSION}, hash = ${CPP2PY_GIT_HASH}, root = ${CPP2PY_ROOT}")
+
+# Mac specific
+if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+ set(CMAKE_INSTALL_NAME_DIR "/Users/ssr38/Documents/GitHub/triqs/install/lib")
+ set(CMAKE_MACOSX_RPATH 1) # new for cmake 3.x
+endif()
+
+###################################################################################
+#
+#            Imported and Exported targets
+#
+###################################################################################
+add_executable(c++2py IMPORTED GLOBAL)
+set_property(TARGET c++2py PROPERTY IMPORTED_LOCATION "/Users/ssr38/Documents/GitHub/triqs/install/bin/c++2py")
+
+add_executable(c++2rst IMPORTED GLOBAL)
+set_property(TARGET c++2rst PROPERTY IMPORTED_LOCATION "/Users/ssr38/Documents/GitHub/triqs/install/bin/c++2rst")
+
+add_executable(c++2cxx IMPORTED GLOBAL)
+set_property(TARGET c++2cxx PROPERTY IMPORTED_LOCATION "/Users/ssr38/Documents/GitHub/triqs/install/bin/c++2cxx")
+
+# find python dependencies
+find_package(Python REQUIRED COMPONENTS Interpreter Development NumPy)
+
+# include the exported targets of this project
+include(/Users/ssr38/Documents/GitHub/triqs/install/lib/cmake/Cpp2Py/Cpp2PyTargets.cmake)
+
+###################################################################################
+#
+#            add_cpp2py_module
+#
+#   Signagutures :
+#		add_cpp2py_module(module_name)
+#		add_cpp2py_module(NAME module_name DEPENDS header_dependencies)
+#   Arguments :
+#		module_name : The name of the module
+#		header_dependencies : Header files that the module depends upon
+#
+#   Set up the compilation of the cpp2py python module
+#   Expects a file ${module_name}_desc.py in the CURRENT_SOURCE_DIR
+#   Adds a library target ${module_name} which :
+#
+#	* DEPENDS on MyModule_desc.py and optionally a set of ${header_dependencies}
+#	* Builds the wrapper-code ${module_name}_wrap.cxx in CURRENT_BINARY_DIR
+#	* Compiles the wrapper-code into the module ${module_name}.so
+#
+###################################################################################
+function(add_cpp2py_module)
+
+  if(${ARGC} EQUAL 1)
+    set(module_name ${ARGV0})
+  else()
+    cmake_parse_arguments(ARG "" "NAME;DIRECTORY" "DEPENDS" ${ARGN})
+    set(module_name ${ARG_NAME})
+    set(module_dir ${ARG_DIRECTORY})
+    set(header_dependencies ${ARG_DEPENDS})
+  endif()
+
+  message(STATUS "Adding cpp2py Python module ${module_name}")
+
+  set(desc_name ${CMAKE_CURRENT_SOURCE_DIR}/${module_dir}/${module_name}_desc.py)    # the desc file
+  set(wrap_name ${CMAKE_CURRENT_BINARY_DIR}/${module_dir}/${module_name}_wrap.cxx)   # path to the wrapping code
+
+  add_custom_command(OUTPUT ${wrap_name} DEPENDS ${desc_name} ${header_dependencies}
+    COMMAND PYTHONPATH=${PROJECT_BINARY_DIR}:${PROJECT_BINARY_DIR}/python:${CPP2PY_MODULE_DIR}:${CPP2PY_ADD_MODULE_ADDITIONAL_PYTHONPATH}:$ENV{PYTHONPATH} ${CPP2PY_PYTHON_EXECUTABLE} ${desc_name} ${wrap_name})
+
+  add_library(${module_name} MODULE ${wrap_name})
+  set_target_properties(${module_name} PROPERTIES SUFFIX ".cpython-311-darwin.so")
+  target_link_libraries(${module_name} cpp2py::cpp2py)
+
+  # We expose only the modules init function in the dynamic symbol table
+  # Use only for Linux as OSX Generates various linker warnings
+  target_compile_options(${module_name} PRIVATE
+    $<$<PLATFORM_ID:Linux>:-fvisibility=hidden>
+    $<$<PLATFORM_ID:Linux>:-fvisibility-inlines-hidden>
+  )
+
+  set_target_properties(${module_name}
+    PROPERTIES
+    PREFIX ""  #eliminate the lib in front of the module name
+    LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/${module_dir}
+  )
+
+  # Keep a list of every module target.
+  # Usage : e.g.  Documentation top target depends on them being built first
+  set_property(GLOBAL APPEND PROPERTY CPP2PY_MODULES_LIST ${module_name})
+
+endfunction(add_cpp2py_module)
+
+endif(NOT CPP2PY_FOUND)

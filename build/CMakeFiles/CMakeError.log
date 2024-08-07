@@ -1,0 +1,38 @@
+Compiling the CXX compiler identification source file "CMakeCXXCompilerId.cpp" failed.
+Compiler: /Library/Developer/CommandLineTools/usr/bin/c++ 
+Build flags: 
+Id flags:  
+
+The output was:
+1
+ld: library 'c++' not found
+clang: error: linker command failed with exit code 1 (use -v to see invocation)
+
+
+Compiling the C compiler identification source file "CMakeCCompilerId.c" failed.
+Compiler: /Library/Developer/CommandLineTools/usr/bin/cc 
+Build flags: 
+Id flags:  
+
+The output was:
+1
+ld: library 'System' not found
+clang: error: linker command failed with exit code 1 (use -v to see invocation)
+
+
+The MPI test test_mpi for CXX in mode normal failed to compile with the following output:
+Change Dir: /Users/ssr38/Documents/GitHub/triqs/build/CMakeFiles/CMakeTmp
+
+Run Build Command(s):/usr/bin/make -f Makefile cmTC_a172c/fast && /Library/Developer/CommandLineTools/usr/bin/make  -f CMakeFiles/cmTC_a172c.dir/build.make CMakeFiles/cmTC_a172c.dir/build
+Building CXX object CMakeFiles/cmTC_a172c.dir/test_mpi.cpp.o
+/Library/Developer/CommandLineTools/usr/bin/c++ -DMPICH_SKIP_MPICXX -DOMPI_SKIP_MPICXX -D_MPICC_H -isystem /usr/local/Cellar/mpich/4.1.2/include -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX14.2.sdk -std=c++98 -MD -MT CMakeFiles/cmTC_a172c.dir/test_mpi.cpp.o -MF CMakeFiles/cmTC_a172c.dir/test_mpi.cpp.o.d -o CMakeFiles/cmTC_a172c.dir/test_mpi.cpp.o -c /Users/ssr38/Documents/GitHub/triqs/build/CMakeFiles/FindMPI/test_mpi.cpp
+Linking CXX executable cmTC_a172c
+/usr/local/Cellar/cmake/3.23.3/bin/cmake -E cmake_link_script CMakeFiles/cmTC_a172c.dir/link.txt --verbose=1
+/Library/Developer/CommandLineTools/usr/bin/c++  -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX14.2.sdk -Wl,-search_paths_first -Wl,-headerpad_max_install_names -Wl,-commons,use_dylibs CMakeFiles/cmTC_a172c.dir/test_mpi.cpp.o -o cmTC_a172c  /usr/local/Cellar/mpich/4.1.2/lib/libmpicxx.dylib /usr/local/Cellar/mpich/4.1.2/lib/libmpi.dylib /usr/local/Cellar/mpich/4.1.2/lib/libpmpi.dylib 
+ld: unknown options: -commons 
+clang: error: linker command failed with exit code 1 (use -v to see invocation)
+make[1]: *** [cmTC_a172c] Error 1
+make: *** [cmTC_a172c/fast] Error 2
+
+
+
